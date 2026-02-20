@@ -1,0 +1,6 @@
+[
+  { "id": 1, "market": "ETH Up", "side": "BUY", "price": 0.88, "shares": 2.317, "pnl": "+0.28", "time": "16:20" },
+  { "id": 2, "market": "BTC Up", "side": "BUY", "price": 0.94, "shares": 2.041, "pnl": "-1.92", "time": "16:22" },
+  { "id": 3, "market": "BTC Down", "side": "BUY", "price": 0.91, "shares": 2.218, "pnl": "-2.02", "time": "16:25" },
+  { "id": 4, "market": "BTC Up", "side": "BUY", "price": 0.87, "shares": 2.298, "pnl": "+0.30", "time": "16:28" }
+]

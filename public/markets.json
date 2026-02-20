@@ -1,0 +1,8 @@
+[
+  { "symbol": "BTC Up", "price": 0.001, "change": "-99.9%", "timeRemaining": "1:00" },
+  { "symbol": "BTC Down", "price": 0.998, "change": "-0.2%", "timeRemaining": "1:00" },
+  { "symbol": "ETH Up", "price": 0.002, "change": "-99.8%", "timeRemaining": "1:00" },
+  { "symbol": "ETH Down", "price": 0.995, "change": "-0.5%", "timeRemaining": "1:00" },
+  { "symbol": "SOL Up", "price": 0.005, "change": "-99.5%", "timeRemaining": "1:00" },
+  { "symbol": "SOL Down", "price": 0.992, "change": "-0.8%", "timeRemaining": "1:00" }
+]

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test - Polymarket Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+        .status {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .status-card {
+            flex: 1;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+        .status-card.connected {
+            border-color: #10b981;
+        }
+        .status-card.disconnected {
+            border-color: #ef4444;
+        }
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .market-card {
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        .market-card.up {
+            border-left: 4px solid #10b981;
+        }
+        .market-card.down {
+            border-left: 4px solid #ef4444;
+        }
+        .price {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .bid { color: #10b981; }
+        .ask { color: #ef4444; }
+        .log {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .log-info { background: #1e40af20; }
+        .log-success { background: #10b98120; }
+        .log-error { background: #ef444420; }
+        .log-warning { background: #f59e0b20; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+        .last-update {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔌 WebSocket Test - Polymarket Dashboard</h1>
+            <p>Real-time market data from backend WebSocket server</p>
+        </div>
+
+        <div class="status">
+            <div class="status-card" id="connectionStatus">
+                <h3>WebSocket Connection</h3>
+                <div class="price" id="statusText">DISCONNECTED</div>
+                <div class="last-update" id="connectionTime">--:--:--</div>
+            </div>
+            <div class="status-card">
+                <h3>Backend Status</h3>
+                <div class="price" id="backendStatus">Checking...</div>
+                <div class="last-update">Port: 3001</div>
+            </div>
+            <div class="status-card">
+                <h3>Market Updates</h3>
+                <div class="price" id="updateCount">0</div>
+                <div class="last-update" id="lastUpdateTime">Never</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="connectWebSocket()" id="connectBtn">Connect WebSocket</button>
+            <button onclick="disconnectWebSocket()" id="disconnectBtn" disabled>Disconnect</button>
+            <button onclick="fetchMarketData()">Fetch API Data</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <h2>📊 Market Prices (Real-time)</h2>
+        <div class="market-grid" id="marketGrid">
+            <!-- Market cards will be inserted here -->
+        </div>
+
+        <h2>📝 WebSocket Log</h2>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        let updateCount = 0;
+        let lastUpdateTime = null;
+        const logElement = document.getElementById('log');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const statusText = document.getElementById('statusText');
+        const connectionTime = document.getElementById('connectionTime');
+        const backendStatus = document.getElementById('backendStatus');
+        const updateCountElement = document.getElementById('updateCount');
+        const lastUpdateTimeElement = document.getElementById('lastUpdateTime');
+        const marketGrid = document.getElementById('marketGrid');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+
+        // Initial market cards
+        const initialMarkets = [
+            { symbol: 'BTC UP', bid: 0.47, ask: 0.48, direction: 'up' },
+            { symbol: 'BTC DOWN', bid: 0.52, ask: 0.53, direction: 'down' },
+            { symbol: 'ETH UP', bid: 0.57, ask: 0.58, direction: 'up' },
+            { symbol: 'ETH DOWN', bid: 0.42, ask: 0.43, direction: 'down' },
+            { symbol: 'SOL UP', bid: 0.50, ask: 0.52, direction: 'up' },
+            { symbol: 'SOL DOWN', bid: 0.48, ask: 0.50, direction: 'down' },
+            { symbol: 'XRP UP', bid: 0.39, ask: 0.41, direction: 'up' },
+            { symbol: 'XRP DOWN', bid: 0.58, ask: 0.61, direction: 'down' }
+        ];
+
+        // Initialize market grid
+        function initializeMarketGrid() {
+            marketGrid.innerHTML = '';
+            initialMarkets.forEach(market => {
+                const card = document.createElement('div');
+                card.className = `market-card ${market.direction}`;
+                card.id = `market-${market.symbol.replace(' ', '-')}`;
+                card.innerHTML = `
+                    <h4>${market.symbol}</h4>
+                    <div class="price">
+                        <span class="bid">$${market.bid.toFixed(3)}</span> / 
+                        <span class="ask">$${market.ask.toFixed(3)}</span>
+                    </div>
+                    <div class="last-update">Waiting for update...</div>
+                `;
+                marketGrid.appendChild(card);
+            });
+        }
+
+        // Log function
+        function log(message, type = 'info') {
+            const now = new Date();
+            const time = now.toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<strong>[${time}]</strong> ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // Clear log
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('Log cleared', 'info');
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectionStatus.className = 'status-card connected';
+                statusText.textContent = 'CONNECTED';
+                statusText.style.color = '#10b981';
+                connectionTime.textContent = new Date().toLocaleTimeString();
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                connectionStatus.className = 'status-card disconnected';
+                statusText.textContent = 'DISCONNECTED';
+                statusText.style.color = '#ef4444';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        // Connect WebSocket
+        function connectWebSocket() {
+            if (socket) {
+                log('WebSocket already connected', 'warning');
+                return;
+            }
+
+            log('Connecting to WebSocket server...', 'info');
+            
+            socket = io('http://localhost:3001', {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000
+            });
+
+            socket.on('connect', () => {
+                log('✅ WebSocket connected successfully!', 'success');
+                updateConnectionStatus(true);
+                backendStatus.textContent = 'CONNECTED';
+                backendStatus.style.color = '#10b981';
+            });
+
+            socket.on('market-update', (data) => {
+                updateCount++;
+                lastUpdateTime = new Date();
+                
+                updateCountElement.textContent = updateCount;
+                lastUpdateTimeElement.textContent = lastUpdateTime.toLocaleTimeString();
+                
+                log(`📡 Market update received (${data.markets.length} markets)`, 'success');
+                console.log('DEBUG: Market data:', data.markets);
+                
+                // Update market cards
+                data.markets.forEach(market => {
+                    // Create safe ID (replace spaces with hyphens)
+                    const safeSymbol = market.symbol.replace(/ /g, '-');
+                    const cardId = `market-${safeSymbol}`;
+                    const card = document.getElementById(cardId);
+                    
+                    if (card) {
+                        const priceElement = card.querySelector('.price');
+                        const updateElement = card.querySelector('.last-update');
+                        
+                        console.log(`DEBUG: Updating ${market.symbol} -> ${cardId}`);
+                        
+                        priceElement.innerHTML = `
+                            <span class="bid">$${market.bid.toFixed(3)}</span> / 
+                            <span class="ask">$${market.ask.toFixed(3)}</span>
+                        `;
+                        updateElement.textContent = `Updated: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}`;
+                        
+                        // Add pulse animation
+                        card.style.animation = 'none';
+                        setTimeout(() => {
+                            card.style.animation = 'pulse 0.5s';
+                        }, 10);
+                    } else {
+                        console.warn(`DEBUG: Card not found: ${cardId} for ${market.symbol}`);
+                        log(`⚠️ Card not found: ${market.symbol}`, 'warning');
+                    }
+                });
+            });
+
+            socket.on('bot-status', (data) => {
+                log(`🤖 Bot status: ${data.health} | PID: ${data.pid} | CPU: ${data.cpu}%`, 'info');
+            });
+
+            socket.on('disconnect', (reason) => {
+                log(`❌ WebSocket disconnected: ${reason}`, 'error');
+                updateConnectionStatus(false);
+                backendStatus.textContent = 'DISCONNECTED';
+                backendStatus.style.color = '#ef4444';
+                socket = null;
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`❌ Connection error: ${error.message}`, 'error');
+                updateConnectionStatus(false);
+                backendStatus.textContent = 'ERROR';
+                backendStatus.style.color = '#ef4444';
+                socket = null;
+            });
+        }
+
+        // Disconnect WebSocket
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.disconnect();
+                log('Disconnecting WebSocket...', 'info');
+                socket = null;
+            }
+        }
+
+        // Fetch market data via API (fallback)
+        async function fetchMarketData() {
+            try {
+                log('Fetching market data via API...', 'info');
+                const response = await fetch('http://localhost:3001/api/markets');
+                const data = await response.json();
+                
+                log(`✅ API response: ${data.markets.length} markets`, 'success');
+                
+                // Update market cards
+                data.markets.forEach(market => {
+                    const cardId = `market-${market.symbol.replace(' ', '-')}`;
+                    const card = document.getElementById(cardId);
+                    if (card) {
+                        const priceElement = card.querySelector('.price');
+                        const updateElement = card.querySelector('.last-update');
+                        
+                        priceElement.innerHTML = `
+                            <span class="bid">$${market.bid.toFixed(3)}</span> / 
+                            <span class="ask">$${market.ask.toFixed(3)}</span>
+                        `;
+                        updateElement.textContent = `API: ${new Date().toLocaleTimeString()}`;
+                    }
+                });
+                
+                backendStatus.textContent = 'API WORKING';
+                backendStatus.style.color = '#10b981';
+                
+            } catch (error) {
+                log(`❌ API error: ${error.message}`, 'error');
+                backendStatus.textContent = 'API ERROR';
+                backendStatus.style.color = '#ef4444';
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            initializeMarketGrid();
+            log('WebSocket test page loaded', 'info');
+            
+            // Try auto-connect after 1 second
+            setTimeout(() => {
+                connectWebSocket();
+            }, 1000);
+        };
+
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.7; }
+                100% { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

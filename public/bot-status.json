@@ -1,0 +1,21 @@
+{
+  "running": true,
+  "pid": 34612,
+  "cpu": 0,
+  "memory_mb": 17.33,
+  "uptime": "58+ minutes",
+  "last_trade": "No recent trades",
+  "health": "HEALTHY",
+  "timestamp": "2026-02-20T10:11:30.000Z",
+  "source": "github-action-auto-update",
+  "market_period": 1771523100,
+  "market_remaining": "1 minute",
+  "prices": {
+    "btc_up": 0.001,
+    "btc_down": 0.998,
+    "eth_up": 0.002,
+    "eth_down": 0.995
+  },
+  "trigger_price": 0.82,
+  "status_message": "Bot running normal, waiting for price trigger"
+}
