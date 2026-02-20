@@ -3,15 +3,15 @@
   "pid": 34612,
   "cpu": 0,
   "memory_mb": 17.73,
-  "uptime": "90+ minutes",
+  "uptime": "93+ minutes",
   "last_trade": "No recent trades",
   "health": "HEALTHY",
-  "timestamp": "2026-02-20T10:47:00.000Z",
+  "timestamp": "2026-02-20T10:50:00.000Z",
   "source": "vercel-static",
   "total_trades": 7,
   "total_profit": -1.844751,
   "market_period": 1771523100,
-  "market_remaining": "130 seconds",
+  "market_remaining": "100 seconds",
   "prices": {
     "btc_up": 0.001,
     "btc_down": 0.998,
@@ -19,6 +19,8 @@
     "eth_down": 0.995
   },
   "trigger_price": 0.82,
-  "status_message": "Bot running normal, monitoring BTC/ETH Down positions",
-  "dashboard_version": "vercel-static-1.0"
+  "status_message": "Bot running normal, BTC Down $0.998 & ETH Down $0.995 within trigger range",
+  "dashboard_version": "vercel-static-1.0",
+  "next_period": "Starting in ~100 seconds",
+  "monitoring_status": "Active - waiting for optimal entry conditions"
 }
