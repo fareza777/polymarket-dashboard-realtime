@@ -2,11 +2,11 @@
   "running": true,
   "pid": 34612,
   "cpu": 0,
-  "memory_mb": 17.33,
-  "uptime": "58+ minutes",
+  "memory_mb": 17.72,
+  "uptime": "75+ minutes",
   "last_trade": "No recent trades",
   "health": "HEALTHY",
-  "timestamp": "2026-02-20T10:11:30.000Z",
+  "timestamp": "2026-02-20T10:29:00.000Z",
   "source": "github-action-auto-update",
   "market_period": 1771523100,
   "market_remaining": "1 minute",
@@ -17,5 +17,8 @@
     "eth_down": 0.995
   },
   "trigger_price": 0.82,
-  "status_message": "Bot running normal, waiting for price trigger"
+  "status_message": "Bot running normal, BTC Down $0.998 within trigger range, waiting for optimal entry",
+  "total_trades": 7,
+  "total_profit": -1.844751,
+  "trading_summary": "7 trades executed, small loss -$1.84"
 }
