@@ -102,7 +102,7 @@ function BotStatus() {
               <Typography variant="caption" color="text.secondary">Memory</Typography>
               <Box display="flex" alignItems="center" justifyContent="center">
                 <MemoryIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">{memory.toFixed(1)} MB</Typography>
+                <Typography variant="h6">{memory.toFixed(2)} MB</Typography>
               </Box>
             </Paper>
           </Grid>
@@ -280,7 +280,7 @@ function AppContent() {
                 </Button>
               </Stack>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-                Bot PID: 5808 | Running 74+ minutes
+                Real-time data from bot process
               </Typography>
             </CardContent>
           </Card>
